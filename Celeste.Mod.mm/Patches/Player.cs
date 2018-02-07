@@ -17,7 +17,6 @@ namespace Celeste {
 
         // We're effectively in Player, but still need to "expose" private fields to our mod.
         private bool wasDashB;
-        private Level level;
 
         public patch_Player(Vector2 position, PlayerSpriteMode spriteMode)
             : base(position, spriteMode) {
@@ -29,14 +28,16 @@ namespace Celeste {
             TrailManager.Add(this, GetCurrentTrailColor(), 1f);
         }
 
+        public extern PlayerDeadBody orig_Die(Vector2 direction, bool evenIfInvincible, bool registerDeathInStats);
+
+        new public PlayerDeadBody Die(Vector2 direction, bool evenIfInvincible = false, bool registerDeathInStats = true) {
+            return orig_Die(direction, evenIfInvincible, registerDeathInStats);
+            Everest.Events.Player.Die(this);
+        }
+
         public Color GetCurrentTrailColor() => GetTrailColor(wasDashB);
         private Color GetTrailColor(bool wasDashB) {
             return wasDashB ? NormalHairColor : UsedHairColor;
-        }
-
-        public Level GetLevel()
-        {
-            return level;
         }
 
     }
@@ -47,9 +48,6 @@ namespace Celeste {
 
         public static Color GetCurrentTrailColor(this Player self)
             => ((patch_Player) self).GetCurrentTrailColor();
-
-        public static Level GetLevel(this Player self)
-            => ((patch_Player)self).GetLevel();
 
     }
 }

@@ -26,11 +26,6 @@ namespace Celeste {
             Everest.Events.Level.Pause(this, startIndex, minimal, quickReset);
         }
 
-        public int GetCurrentDeathCount()
-        {
-            return Session.DeathsInCurrentLevel;
-        }
-
     }
     public static class LevelExt {
 
@@ -38,9 +33,6 @@ namespace Celeste {
         // We thus expose any new members through extensions.
 
         internal static EventInstance PauseSnapshot => patch_Level._PauseSnapshot;
-
-        public static int GetCurrentDeathCount(this Level self)
-            => ((patch_Level)self).GetCurrentDeathCount();
 
     }
 }

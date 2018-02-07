@@ -38,9 +38,13 @@ namespace Celeste.Mod {
         /// Load the mod settings. Loads the settings from {Everest.PathSettings}/{Metadata.Name}.yaml by default.
         /// </summary>
         public virtual void LoadSettings() {
-            string path = Path.Combine(Everest.PathSettings, Metadata.Name + ".yaml");
-            if (!File.Exists(path))
+            if (SettingsType == null)
                 return;
+            string path = Path.Combine(Everest.PathSettings, Metadata.Name + ".yaml");
+            if (!File.Exists(path)) {
+                _Settings = (EverestModuleSettings) SettingsType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
+                return;
+            }
             using (Stream stream = File.OpenRead(path))
             using (StreamReader reader = new StreamReader(path))
                 _Settings = (EverestModuleSettings) YamlHelper.Deserializer.Deserialize(reader, SettingsType);
@@ -50,6 +54,8 @@ namespace Celeste.Mod {
         /// Save the mod settings. Saves the settings to {Everest.PathSettings}/{Metadata.Name}.yaml by default.
         /// </summary>
         public virtual void SaveSettings() {
+            if (SettingsType == null)
+                return;
             string path = Path.Combine(Everest.PathSettings, Metadata.Name + ".yaml");
             if (File.Exists(path))
                 File.Delete(path);
@@ -59,10 +65,58 @@ namespace Celeste.Mod {
         }
 
         /// <summary>
-        /// Perform any initializing actions after all modd have been loaded.
+        /// The type used for the save data object. Used for serialization, among other things.
+        /// </summary>
+        public virtual Type SaveDataType => null;
+        /// <summary>
+        /// Any save data stored across runs.
+        /// Define your custom property returning _SaveData typecasted as your custom save data type.
+        /// </summary>
+        public virtual EverestModuleSaveData _SaveData { get; set; }
+
+        /// <summary>
+        /// Load the mod save data. Loads the save data from {Everest.PathSettings}/Save{index}/{Metadata.Name}.yaml by default.
+        /// </summary>
+        public virtual void LoadSaveData(int index) {
+            if (SaveDataType == null)
+                return;
+            string path = Path.Combine(Everest.PathSettings, "Save" + index, Metadata.Name + ".yaml");
+            if (!File.Exists(path)) {
+                _SaveData = (EverestModuleSaveData) SaveDataType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
+                return;
+            }
+            using (Stream stream = File.OpenRead(path))
+            using (StreamReader reader = new StreamReader(path))
+                _SaveData = (EverestModuleSaveData) YamlHelper.Deserializer.Deserialize(reader, SaveDataType);
+        }
+
+        /// <summary>
+        /// Save the mod save data. Saves the save data to {Everest.PathSettings}/Save{index}/{Metadata.Name}.yaml by default.
+        /// </summary>
+        public virtual void SaveSaveData(int index) {
+            if (SaveDataType == null)
+                return;
+            string path = Path.Combine(Everest.PathSettings, "Save" + index, Metadata.Name + ".yaml");
+            if (File.Exists(path))
+                File.Delete(path);
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            using (Stream stream = File.OpenWrite(path))
+            using (StreamWriter writer = new StreamWriter(stream))
+                YamlHelper.Serializer.Serialize(writer, _SaveData, SaveDataType);
+        }
+
+        /// <summary>
+        /// Perform any initializing actions after all mods have been loaded.
         /// Do not depend on any specific order in which the mods get initialized.
         /// </summary>
         public abstract void Load();
+
+        /// <summary>
+        /// Perform any initializing actions after Celeste.Initialize has been called.
+        /// Do not depend on any specific order in which the mods get initialized.
+        /// </summary>
+        public virtual void Initialize() {
+        }
 
         /// <summary>
         /// Unload any unmanaged resources allocated by the mod (f.e. textures) and
@@ -102,10 +156,7 @@ namespace Celeste.Mod {
             // The settings subheader.
             string name; // We lazily reuse this field for the props later on.
             name = type.GetCustomAttribute<SettingNameAttribute>()?.Name ?? $"{nameDefaultPrefix}title";
-            if (Dialog.Has(name))
-                name = Dialog.Clean(name);
-            else
-                name = Metadata.Name.SpacedPascalCase();
+            name = name.DialogCleanOrNull() ?? Metadata.Name.SpacedPascalCase();
 
             menu.Add(new TextMenu.SubHeader(name));
 
@@ -129,10 +180,7 @@ namespace Celeste.Mod {
                     continue;
 
                 name = prop.GetCustomAttribute<SettingNameAttribute>()?.Name ?? $"{nameDefaultPrefix}{prop.Name.ToLowerInvariant()}";
-                if (Dialog.Has(name))
-                    name = Dialog.Clean(name);
-                else
-                    name = prop.Name.SpacedPascalCase();
+                name = name.DialogCleanOrNull() ?? prop.Name.SpacedPascalCase();
 
                 bool needsRelaunch = prop.GetCustomAttribute<SettingNeedsRelaunchAttribute>() != null;
 

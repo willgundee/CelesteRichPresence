@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Microsoft.Xna.Framework;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -66,6 +68,25 @@ namespace Celeste.Mod {
                 builder.Append(c);
             }
             return builder.ToString();
+        }
+
+        public static string DialogKeyify(this string input)
+            => input.Replace('/', '_').Replace('-', '_');
+
+        public static string DialogClean(this string input, Language language = null)
+            => Dialog.Clean(input, language);
+
+        public static string DialogCleanOrNull(this string input, Language language = null) {
+            if (Dialog.Has(input))
+                return Dialog.Clean(input);
+            else
+                return null;
+        }
+
+        public static Vector3? ToVector3(this float[] a) {
+            if (a.Length != 3)
+                return null;
+            return new Vector3(a[0], a[1], a[2]);
         }
 
         public static TextMenu.Item NeedsRelaunch(this TextMenu.Item option, bool needsRelaunch) {

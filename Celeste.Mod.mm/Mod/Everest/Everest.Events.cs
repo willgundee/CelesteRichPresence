@@ -19,12 +19,18 @@ using System.Threading.Tasks;
 using _Atlas = Monocle.Atlas;
 using _OuiMainMenu = Celeste.OuiMainMenu;
 using _Level = Celeste.Level;
+using _Player = Celeste.Player;
+using _OuiJournal = Celeste.OuiJournal;
 
 namespace Celeste.Mod {
     public static partial class Everest {
         public static class Events {
 
-            // TODO: Put any events we want to expose (OnLevelLoad, ...) here.
+            public static class Celeste {
+                public static event Action OnExiting;
+                internal static void Exiting()
+                    => OnExiting?.Invoke();
+            }
 
             public static class GFX {
 
@@ -103,27 +109,21 @@ namespace Celeste.Mod {
             }
 
             public static class Atlas {
-
                 public static event Action<_Atlas> OnLoad;
                 internal static void Load(_Atlas atlas)
                     => OnLoad?.Invoke(atlas);
-
             }
 
             public static class Dialog {
-
                 public static event Action OnInitLanguages;
                 internal static void InitLanguages()
                     => OnInitLanguages?.Invoke();
-
             }
 
             public static class OuiMainMenu {
-
-                public static event Action<_OuiMainMenu, List<MenuButton>> OnCreateMainMenuButtons;
-                internal static void CreateMainMenuButtons(_OuiMainMenu menu, List<MenuButton> buttons)
-                    => OnCreateMainMenuButtons?.Invoke(menu, buttons);
-
+                public static event Action<_OuiMainMenu, List<MenuButton>> OnCreateButtons;
+                internal static void CreateButtons(_OuiMainMenu menu, List<MenuButton> buttons)
+                    => OnCreateButtons?.Invoke(menu, buttons);
             }
 
             public static class Level {
@@ -136,7 +136,31 @@ namespace Celeste.Mod {
                 internal static void CreatePauseMenuButtons(_Level level, TextMenu menu, bool minimal)
                     => OnCreatePauseMenuButtons?.Invoke(level, menu, minimal);
 
+                public static event Action<LevelData, Vector2> OnTransitionTo; 
+                internal static void TransitionTo(LevelData next, Vector2 direction)
+                    => OnTransitionTo?.Invoke(next, direction);
+
             }
+
+            public static class LevelEnter {
+                public static event Action<Session, bool> OnGo;
+                internal static void Go(Session session, bool fromSaveData)
+                    => OnGo?.Invoke(session, fromSaveData);
+            }
+
+            public static class Player {
+                public static event Action<_Player> OnDie;
+                internal static void Die(_Player player)
+                    => OnDie?.Invoke(player);
+            }
+
+            public static class OuiJournal {
+                public static event Action<_OuiJournal, Oui> OnEnter;
+                internal static void Enter(_OuiJournal journal, Oui from)
+                    => OnEnter?.Invoke(journal, from);
+            }
+
+            // Put any events we want to expose (f.e. Level.OnLoad) here.
 
         }
     }

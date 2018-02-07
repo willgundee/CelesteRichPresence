@@ -87,13 +87,12 @@ namespace Celeste.Mod.RichPresence
             Instance = this;
             handlers = new DiscordRpc.EventHandlers();
             DiscordRpc.Initialize("410142275738402817", ref handlers, true, null);
-            //DiscordRpc.Shutdown(); //Fix the crash but makes the mod pointless
-            AppDomain.CurrentDomain.ProcessExit += new EventHandler(OnProcessExit); //doesnt fix the crash
+            Everest.Events.Celeste.OnExiting += Celeste_OnExiting;
         }
 
-        static void OnProcessExit(object sender, EventArgs e)
+        private void Celeste_OnExiting()
         {
-            DiscordRpc.Shutdown();//doesnt fix the crash
+            DiscordRpc.Shutdown();
         }
 
         public override void Load()
@@ -117,10 +116,6 @@ namespace Celeste.Mod.RichPresence
             sessionDeathCounter++;
             presence.details = "Has died " + sessionDeathCounter.ToString() + " times this session";
             DiscordRpc.UpdatePresence(ref presence);
-            if (sessionDeathCounter == 3)
-            {
-                DiscordRpc.Shutdown();
-            }
             return orig_Die(self,direction,evenIfInvincible,registerDeathInStats);
         }
 

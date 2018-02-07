@@ -16,9 +16,6 @@ namespace Celeste.Mod {
         private const float onScreenX = 960f;
         private const float offScreenX = 2880f;
 
-        private string startLanguage;
-        private string currentLanguage;
-
         private float alpha = 0f;
 
         public OuiModOptions() {
@@ -27,7 +24,7 @@ namespace Celeste.Mod {
         public static TextMenu CreateMenu(bool inGame, EventInstance snapshot) {
             TextMenu menu = new TextMenu();
 
-            menu.Add(new TextMenu.Header($"{Dialog.Clean("MODOPTIONS_TITLE")} v.{Everest.VersionString}"));
+            menu.Add(new TextMenu.Header($"{Dialog.Clean("modoptions_title")} v.{Everest.VersionString}"));
 
             Everest.InvokeTyped(
                 "CreateModMenuSection",
@@ -68,8 +65,6 @@ namespace Celeste.Mod {
             menu.Visible = (Visible = true);
             menu.Focused = false;
 
-            currentLanguage = startLanguage = Settings.Instance.Language;
-
             for (float p = 0f; p < 1f; p += Engine.DeltaTime * 4f) {
                 menu.X = offScreenX + -1920f * Ease.CubeOut(p);
                 alpha = Ease.CubeOut(p);
@@ -92,11 +87,6 @@ namespace Celeste.Mod {
                 yield return null;
             }
 
-            if (startLanguage != Settings.Instance.Language) {
-                Overworld.ReloadMenus(Overworld.StartMode.ReturnFromOptions);
-                yield return null;
-            }
-
             menu.Visible = Visible = false;
             menu.RemoveSelf();
             menu = null;
@@ -108,11 +98,6 @@ namespace Celeste.Mod {
                 Selected && Input.MenuCancel.Pressed) {
                 Audio.Play("event:/ui/main/button_back");
                 Overworld.Goto<OuiMainMenu>();
-            }
-
-            if (Selected && currentLanguage != Settings.Instance.Language) {
-                currentLanguage = Settings.Instance.Language;
-                ReloadMenu();
             }
 
             base.Update();
