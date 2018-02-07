@@ -11,7 +11,7 @@ using System.Runtime.InteropServices;
 
 namespace Celeste.Mod.RichPresence
 {
-    public class DiscordRpc
+    public class DiscordRpc //this class comes from https://github.com/nostrenz/cshap-discord-rpc-demo
     {
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate void ReadyCallback();
@@ -65,27 +65,35 @@ namespace Celeste.Mod.RichPresence
     public class RichPresenceModule : EverestModule
     {
         public static RichPresenceModule Instance;
+        DiscordRpc.EventHandlers handlers;
 
         public override Type SettingsType => typeof(RichPresenceModuleSettings);
         public static RichPresenceModuleSettings Settings => (RichPresenceModuleSettings)Instance._Settings;
 
         // The methods we want to hook.
-        private readonly static MethodInfo m_Update = typeof(Player).GetMethod("Update", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        private readonly static MethodInfo m_Die = typeof(Player).GetMethod("Die", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 
         private static DiscordRpc.RichPresence presence;
         private static int sessionDeathCounter = 0;
-        private static int lastDeathValue = 0;
 
+
+
+        /// <summary>
+        /// Calls ReadyCallback(), DisconnectedCallback(), ErrorCallback().
+        /// </summary>
 
         public RichPresenceModule()
         {
             Instance = this;
-            DiscordRpc.EventHandlers handlers = new DiscordRpc.EventHandlers();
-            //I should probably put some handler here but i dont know how yet
-            //handlers.readyCallback = ReadyCallback;
-            //handlers.disconnectedCallback += DisconnectedCallback;
-            //handlers.errorCallback += ErrorCallback;
+            handlers = new DiscordRpc.EventHandlers();
             DiscordRpc.Initialize("410142275738402817", ref handlers, true, null);
+            //DiscordRpc.Shutdown(); //Fix the crash but makes the mod pointless
+            AppDomain.CurrentDomain.ProcessExit += new EventHandler(OnProcessExit); //doesnt fix the crash
+        }
+
+        static void OnProcessExit(object sender, EventArgs e)
+        {
+            DiscordRpc.Shutdown();//doesnt fix the crash
         }
 
         public override void Load()
@@ -93,45 +101,23 @@ namespace Celeste.Mod.RichPresence
             // Runtime hooks are quite different from static patches.
             Type t_RichPresenceModule = GetType();
             // [trampoline] = [method we want to hook] .Detour< [signature] >( [replacement method] );
-            orig_Update = m_Update.Detour<d_Update>(t_RichPresenceModule.GetMethod("Update"));
+            orig_Die = m_Die.Detour<d_Die>(t_RichPresenceModule.GetMethod("Die"));
         }
 
         public override void Unload()
         {
-            DiscordRpc.Shutdown();
             // Let's just hope that nothing else detoured this, as this is depth-based...
-            RuntimeDetour.Undetour(m_Update);
+            RuntimeDetour.Undetour(m_Die);
         }
 
-        public delegate void d_Update(Player self);
-        public static d_Update orig_Update;
-        public static void Update(Player self)
+        public delegate PlayerDeadBody d_Die(Player self, Vector2 direction, bool evenIfInvincible, bool registerDeathInStats);
+        public static d_Die orig_Die;
+        public static PlayerDeadBody Die(Player self, Vector2 direction, bool evenIfInvincible, bool registerDeathInStats)
         {
-            orig_Update(self);
-
-            if (Settings.Enabled)
-            {
-                try
-                {
-                    int amount = self.GetLevel().GetCurrentDeathCount();
-                    if (amount == 0)
-                    {
-                        lastDeathValue = 0;
-                    }
-                    else if (amount != lastDeathValue)
-                    {
-                        sessionDeathCounter++;
-                        presence.details = "Has died " + sessionDeathCounter.ToString() + " times this session";
-                        DiscordRpc.UpdatePresence(ref presence);
-                        lastDeathValue = amount;
-                    }
-                }
-                catch (Exception e)
-                {
-                    presence.details = e.Message;
-                    DiscordRpc.UpdatePresence(ref presence);
-                }
-            }
+            sessionDeathCounter++;
+            presence.details = "Has died " + sessionDeathCounter.ToString() + " times this session";
+            DiscordRpc.UpdatePresence(ref presence);
+            return orig_Die(self,direction,evenIfInvincible,registerDeathInStats);
         }
 
     }
