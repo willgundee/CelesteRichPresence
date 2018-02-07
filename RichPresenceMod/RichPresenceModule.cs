@@ -117,6 +117,10 @@ namespace Celeste.Mod.RichPresence
             sessionDeathCounter++;
             presence.details = "Has died " + sessionDeathCounter.ToString() + " times this session";
             DiscordRpc.UpdatePresence(ref presence);
+            if (sessionDeathCounter == 3)
+            {
+                DiscordRpc.Shutdown();
+            }
             return orig_Die(self,direction,evenIfInvincible,registerDeathInStats);
         }
 

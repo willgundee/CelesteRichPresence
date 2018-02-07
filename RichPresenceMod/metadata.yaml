@@ -1,6 +1,6 @@
-﻿Name: TestMod
+﻿Name: RichPresenceMod
 Version: 1.0.0
-DLL: TestMod.dll
+DLL: RichPresenceMod.dll
 Dependencies:
   - Name: Everest
     Version: 1.0.0
