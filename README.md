@@ -9,3 +9,5 @@ Also i curently hook the death counter to Player.Update because I dont know how 
 
 This is all spag and I dont know what im doing.
 But it's kinda working :)
+
+Feel free to use this however you like it.
