@@ -76,17 +76,15 @@ namespace Celeste.Mod.RichPresence
         private static DiscordRpc.RichPresence presence;
         private static int sessionDeathCounter = 0;
 
-
-
-        /// <summary>
-        /// Calls ReadyCallback(), DisconnectedCallback(), ErrorCallback().
-        /// </summary>
+        
 
         public RichPresenceModule()
         {
             Instance = this;
             handlers = new DiscordRpc.EventHandlers();
             DiscordRpc.Initialize("410142275738402817", ref handlers, true, null);
+            presence.details = "Has died 0 times this session";
+            DiscordRpc.UpdatePresence(ref presence);
             Everest.Events.Celeste.OnExiting += Celeste_OnExiting;
         }
 
